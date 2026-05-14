@@ -1,0 +1,14 @@
+fastapi
+uvicorn[standard]
+sqlalchemy[asyncio]>=2.0.0
+alembic
+aiosqlite
+asyncpg
+pydantic[email]>=2.0.0
+pydantic-settings
+python-dotenv
+python-jose[cryptography]
+passlib[bcrypt]
+google-auth
+requests
+python-multipart
