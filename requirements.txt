@@ -12,3 +12,12 @@ passlib[bcrypt]
 google-auth
 requests
 python-multipart
+# Agent 1: Legal Analyst
+pymupdf
+langchain-core
+langchain-google-genai
+langchain-openai
+langchain-text-splitters
+chromadb
+unstructured[pdf]
+pytesseract
