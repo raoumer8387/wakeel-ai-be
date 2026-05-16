@@ -17,9 +17,13 @@ def run_test():
     print(f"\nCITIZEN PROBLEM:\n\"{query}\"")
     print("\nProcessing... (Thinking with Pakistani Law & Amendments)")
     
-    brief = agent.process_request(query)
+    brief, sources = agent.process_request(query)
     
     print("\n" + brief)
+    print("\n" + "=" * 50)
+    print("      SOURCES RETRIEVED (Verification)      ")
+    for s in sources:
+        print(f"- {s['metadata']['filename']} | Section: {s['metadata']['section_number']}")
     print("=" * 50)
 
 if __name__ == "__main__":

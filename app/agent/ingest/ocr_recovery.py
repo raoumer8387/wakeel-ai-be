@@ -12,13 +12,15 @@ logger = logging.getLogger(__name__)
 
 class OCRRecovery:
     def __init__(self):
-        # Initialize OpenRouter LLM
+        # Initialize OpenRouter LLM (Using 3B Free for stability)
         if settings.OPENROUTER_API_KEY:
+            print(f"DEBUG: Using OpenRouter Key ending in: ...{settings.OPENROUTER_API_KEY[-4:]}")
             self.llm = ChatOpenAI(
                 model="google/gemini-2.0-flash-001",
                 openai_api_key=settings.OPENROUTER_API_KEY,
                 base_url="https://openrouter.ai/api/v1",
                 temperature=0,
+                max_tokens=2000,
                 default_headers={
                     "HTTP-Referer": "https://wakeel.ai",
                     "X-Title": "Wakeel AI Legal Agent",
@@ -101,7 +103,15 @@ class OCRRecovery:
                     return recovered_sections
                 except Exception as e:
                     logger.warning(f"OpenRouter attempt {attempt+1} failed: {e}")
-                    time.sleep(5)
+                    if "429" in str(e):
+                        logger.info("Rate limit hit. Waiting 30 seconds...")
+                        time.sleep(30)
+                    else:
+                        time.sleep(5)
+            
+            # Fallback to local heuristic if all retries fail
+            # (Wait 10s before fallback to be safe)
+            time.sleep(10)
             
         # Fallback to local heuristic splitting if LLM fails or is missing
         logger.info(f"Falling back to local heuristic for {pdf_filename}")
