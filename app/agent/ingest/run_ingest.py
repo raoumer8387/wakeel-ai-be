@@ -7,6 +7,7 @@ from app.agent.ingest.ocr_recovery import OCRRecovery
 from app.agent.ingest.amendment_linker import AmendmentLinker
 from app.agent.ingest.vectorizer import LawVectorizer
 from app.config import settings
+import time 
 
 # Configure logging
 logging.basicConfig(level=logging.INFO, format='%(asctime)s - %(levelname)s - %(message)s')
@@ -69,6 +70,9 @@ def main():
         # Save progress
         save_progress(filename)
         logger.info(f"Successfully finished: {filename}")
+        
+        # Short cooldown for paid models
+        time.sleep(2)
     
     logger.info("Ingestion Pipeline Completed Successfully!")
 

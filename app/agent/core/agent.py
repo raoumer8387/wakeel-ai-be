@@ -11,7 +11,7 @@ class LegalAnalystAgent:
         self.retriever = LawRetriever()
         self.reasoner = LawReasoner()
 
-    def process_request(self, user_query: str) -> str:
+    def process_request(self, user_query: str) -> tuple[str, list]:
         logger.info(f"Processing legal request: {user_query[:50]}...")
         
         # 1. Route to relevant law families
@@ -25,7 +25,7 @@ class LegalAnalystAgent:
         # 3. Reason and generate brief
         brief = self.reasoner.analyze(user_query, docs)
         
-        return brief
+        return brief, docs
 
 if __name__ == "__main__":
     # Quick test

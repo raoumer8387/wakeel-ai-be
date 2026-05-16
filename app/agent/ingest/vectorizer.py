@@ -44,13 +44,13 @@ class LawVectorizer:
             chunks = [section.body[i:i+2000] for i in range(0, len(section.body), 2000)]
             
             for i, chunk in enumerate(chunks):
-                # CREATE UNIQUE ID: LawFamily_Filename_Section_ChunkIndex_Timestamp
-                # Adding timestamp ensures that even if we rerun, we don't conflict with internal batch logic
-                unique_id = f"{section.law_family}_{section.pdf_filename}_{section.section_number}_{i}_{chunk_idx}"
+                # CREATE UNIQUE ID: LawFamilyValue_Filename_Section_ChunkIndex_Timestamp
+                family_val = section.law_family.value if hasattr(section.law_family, 'value') else str(section.law_family)
+                unique_id = f"{family_val}_{section.pdf_filename}_{section.section_number}_{i}_{chunk_idx}"
                 ids.append(unique_id)
                 documents.append(chunk)
                 metadatas.append({
-                    "law_family": str(section.law_family),
+                    "law_family": family_val,
                     "filename": section.pdf_filename,
                     "section_number": section.section_number,
                     "title": section.title or "",
