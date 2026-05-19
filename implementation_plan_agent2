@@ -1,0 +1,52 @@
+# Stateful Step-by-Step Chat for Missing Details
+
+This plan outlines the architectural changes required to transform the document generation pipeline from a single-shot execution into a multi-turn conversational flow. This ensures that the user is prompted step-by-step for any missing information (e.g., CNIC, Mehr amount, Husband's name) before generating the final PDF petition.
+
+## User Review Required
+
+> [!IMPORTANT]
+> The orchestrator will now read from the `cases` and `messages` database tables to maintain conversation history. Because of this, the `test_orchestrator.py` script (which runs with `db=None`) will need to be updated to either use a real SQLite/Postgres DB or we must create a mock DB adapter for testing. Are you okay with updating the test script to use a real local DB session, or would you prefer a mock?
+
+## Proposed Changes
+
+### `app/agent/document_specialist.py`
+
+#### [MODIFY] DocumentSpecialistAgent
+- **`extract_placeholders`**: Modify the prompt to accept `chat_history` instead of a single `user_problem`. Gemini will analyze the entire back-and-forth conversation to extract facts as they are progressively provided.
+- **`ask_for_missing_info` (NEW)**: Add a method that takes the list of `missing_fields` and uses Gemini to generate a friendly, natural language question asking the user for 1 or 2 of those fields.
+- **`process`**: 
+  - Change signature to `process(self, legal_brief: dict, chat_history: str, case_id: str)`.
+  - If `len(missing_fields) > 0`: Skip PDF generation. Call `ask_for_missing_info`. Return `{"status": "missing_info", "question": generated_question, "missing_fields": missing_fields}`.
+  - If `len(missing_fields) == 0`: Proceed with PDF generation and mock filing. Return `{"status": "success", ...}`.
+
+---
+
+### `app/agent/orchestrator.py`
+
+#### [MODIFY] WakeelOrchestrator
+- **`run_pipeline`**:
+  - **State Check**: Read `case = await db.execute(select(Case).where(Case.id == case_id))`.
+  - **Agent 1 (Conditional)**: If `case.status == "draft"`, run Agent 1, generate the `legal_brief`, and update status to `"analysed"`. If `case.status == "analysed"`, retrieve the existing `case.legal_brief` and skip Agent 1.
+  - **Chat History**: Fetch all `Message` records for this `case_id` from the database. Format them into a transcript (e.g., `User: I want a khula\nAgent: Ok, what is your name?`).
+  - **Agent 2 Execution**: Pass `legal_brief` and the transcript to `document_specialist.process()`.
+  - **Flow Control**:
+    - If Agent 2 returns `"missing_info"`:
+      - Yield a new event `agent2_question` containing the conversational question.
+      - Save the question as an `agent2` role `Message` in the DB.
+      - Stop execution and wait for the user's next message.
+    - If Agent 2 returns `"success"`:
+      - Yield `agent2_done`.
+      - Yield simulation events and save the Document.
+      - Update `case.status` to `"filed"`.
+
+## Verification Plan
+
+### Automated Tests
+- Update `test_orchestrator.py` to use `app.database.get_db` or a local SQLite test database.
+- Simulate a conversation loop:
+  1. Input: "I need a Khula". 
+  2. Expect output: Agent 1 completes, Agent 2 asks for missing fields (e.g., Name, CNIC).
+  3. Input: "My name is Sara, my CNIC is 12345".
+  4. Expect output: Agent 2 asks for remaining missing fields (e.g. Husband's name).
+  5. Input: Provide remaining fields.
+  6. Expect output: PDF generated successfully.

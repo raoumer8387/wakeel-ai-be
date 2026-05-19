@@ -3,6 +3,7 @@ from fastapi.security import OAuth2PasswordBearer
 from jose import jwt, JWTError
 from sqlalchemy.ext.asyncio import AsyncSession
 from sqlalchemy.future import select
+import uuid
 
 from app.config import settings
 from app.database import get_db
@@ -33,10 +34,15 @@ async def get_current_user(
         user_id: str = payload.get("sub")
         if user_id is None:
             raise credentials_exception
+            
+        try:
+            user_uuid = uuid.UUID(user_id)
+        except ValueError:
+            raise credentials_exception
     except JWTError:
         raise credentials_exception
 
-    result = await db.execute(select(User).filter(User.id == user_id))
+    result = await db.execute(select(User).filter(User.id == user_uuid))
     user = result.scalars().first()
     
     if user is None:
