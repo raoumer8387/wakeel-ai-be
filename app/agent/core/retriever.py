@@ -25,7 +25,7 @@ class LawRetriever:
         
         # Search ChromaDB
         # filter by relevant families if provided
-        where_filter = {}
+        where_filter = None
         if families:
             if len(families) == 1:
                 where_filter = {"law_family": families[0]}

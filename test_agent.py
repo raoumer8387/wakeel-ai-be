@@ -12,7 +12,7 @@ def run_test():
     print("=" * 50)
     
     # Example complex problem involving multiple laws
-    query = "I have been living at my parents' house for six months because of a fight. My husband is not sending any money for our 5-year-old son's school fees or my expenses. What legal steps can I take to get 'Kharcha' (maintenance) without filing for a full divorce yet?"
+    query = "Meri biwi ne khula manga hai, main kya karun?"
     
     print(f"\nCITIZEN PROBLEM:\n\"{query}\"")
     print("\nProcessing... (Thinking with Pakistani Law & Amendments)")
