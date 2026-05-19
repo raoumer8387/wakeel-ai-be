@@ -29,6 +29,9 @@ class User(Base):
     phone: Mapped[Optional[str]] = mapped_column(
         String(20), unique=True, index=True, nullable=True
     )
+    cnic: Mapped[Optional[str]] = mapped_column(
+        String(20), unique=True, index=True, nullable=True
+    )
     avatar_url: Mapped[Optional[str]] = mapped_column(Text, nullable=True)
 
     # ── Meta fields ──
