@@ -2,6 +2,7 @@ from fastapi import FastAPI, Depends
 from fastapi.middleware.cors import CORSMiddleware
 from app.api.v1.auth import router as auth_router
 from app.api.v1.endpoints.legal import router as legal_router
+from app.api.v1 import chat, cases, documents
 from app.api.v1.deps import get_current_user
 from app.models.user import User
 from app.config import settings
@@ -24,6 +25,22 @@ app.add_middleware(
 # Include Routers
 app.include_router(auth_router, prefix=f"{settings.API_V1_STR}/auth", tags=["Authentication"])
 app.include_router(legal_router, prefix=f"{settings.API_V1_STR}/legal", tags=["Legal Agent"])
+
+app.include_router(
+    chat.router,
+    prefix="/api/v1/chat",
+    tags=["chat"]
+)
+app.include_router(
+    cases.router,
+    prefix="/api/v1/cases",
+    tags=["cases"]
+)
+app.include_router(
+    documents.router,
+    prefix="/api/v1/documents",
+    tags=["documents"]
+)
 
 @app.get("/")
 async def root():

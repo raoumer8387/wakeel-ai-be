@@ -14,6 +14,7 @@ class ManualRegisterRequest(BaseModel):
     name: str
     email: EmailStr
     phone: Optional[str] = None
+    cnic: Optional[str] = None
     password: str
 
 
@@ -26,6 +27,13 @@ class RefreshRequest(BaseModel):
     refresh_token: str
 
 
+class ProfileUpdateRequest(BaseModel):
+    name: Optional[str] = None
+    phone: Optional[str] = None
+    cnic: Optional[str] = None
+    avatar_url: Optional[str] = None
+
+
 # ── Response Schemas ──
 
 class UserResponse(BaseModel):
@@ -33,6 +41,7 @@ class UserResponse(BaseModel):
     name: str
     email: EmailStr
     phone: Optional[str] = None
+    cnic: Optional[str] = None
     avatar_url: Optional[str] = None
     is_active: bool
     created_at: datetime

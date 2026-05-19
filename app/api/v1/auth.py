@@ -15,6 +15,8 @@ from app.schemas.auth import (
     ManualLoginRequest,
     TokenResponse,
     RefreshRequest,
+    ProfileUpdateRequest,
+    UserResponse,
 )
 from app.services.google_auth import verify_google_token
 from app.api.v1.deps import get_current_user
@@ -122,10 +124,20 @@ async def register(
                 detail="A user with this phone number already exists",
             )
 
+    # Check if CNIC already exists (if provided)
+    if request.cnic:
+        result = await db.execute(select(User).filter(User.cnic == request.cnic))
+        if result.scalars().first():
+            raise HTTPException(
+                status_code=status.HTTP_409_CONFLICT,
+                detail="A user with this CNIC already exists",
+            )
+
     user = User(
         name=request.name,
         email=request.email,
         phone=request.phone,
+        cnic=request.cnic,
         hashed_password=hash_password(request.password),
     )
     db.add(user)
@@ -216,4 +228,58 @@ async def logout(current_user: User = Depends(get_current_user)):
     by deleting the access and refresh tokens from secure storage.
     """
     return {"message": "Successfully logged out. Please remove the tokens from your client storage."}
+
+
+# ──────────────────────────────────────────────
+#  PUT /api/v1/auth/profile
+# ──────────────────────────────────────────────
+@router.put("/profile", response_model=UserResponse)
+async def update_profile(
+    request: ProfileUpdateRequest,
+    current_user: User = Depends(get_current_user),
+    db: AsyncSession = Depends(get_db),
+):
+    """Update user profile details (name, phone, cnic, avatar_url)."""
+
+    if request.name is not None:
+        name_val = request.name.strip()
+        if not name_val:
+            raise HTTPException(
+                status_code=status.HTTP_400_BAD_REQUEST,
+                detail="Name cannot be empty",
+            )
+        current_user.name = name_val
+
+    if request.phone is not None:
+        phone_val = request.phone.strip() if request.phone else None
+        if phone_val and phone_val != current_user.phone:
+            result = await db.execute(select(User).filter(User.phone == phone_val))
+            if result.scalars().first():
+                raise HTTPException(
+                    status_code=status.HTTP_409_CONFLICT,
+                    detail="A user with this phone number already exists",
+                )
+        current_user.phone = phone_val
+
+    if request.cnic is not None:
+        cnic_val = request.cnic.strip() if request.cnic else None
+        if cnic_val and cnic_val != current_user.cnic:
+            result = await db.execute(select(User).filter(User.cnic == cnic_val))
+            if result.scalars().first():
+                raise HTTPException(
+                    status_code=status.HTTP_409_CONFLICT,
+                    detail="A user with this CNIC already exists",
+                )
+        current_user.cnic = cnic_val
+
+    if request.avatar_url is not None:
+        current_user.avatar_url = request.avatar_url.strip() if request.avatar_url else None
+
+    current_user.updated_at = datetime.utcnow()
+
+    await db.commit()
+    await db.refresh(current_user)
+
+    return current_user
+
 
