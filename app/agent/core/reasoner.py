@@ -6,13 +6,8 @@ from app.config import settings
 
 class LawReasoner:
     def __init__(self):
-        self.llm = ChatOpenAI(
-            model="google/gemini-2.0-flash-001",
-            openai_api_key=settings.OPENROUTER_API_KEY,
-            base_url="https://openrouter.ai/api/v1",
-            temperature=0.3,
-            max_tokens=2000
-        )
+        from app.agent.core.llm import get_resilient_llm
+        self.llm = get_resilient_llm(temperature=0.3, max_tokens=2000)
         self.parser = JsonOutputParser()
         
         self.prompt = ChatPromptTemplate.from_template("""

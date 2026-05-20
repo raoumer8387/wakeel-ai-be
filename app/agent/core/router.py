@@ -12,23 +12,8 @@ class RoutingDecision(BaseModel):
 
 class LawRouter:
     def __init__(self):
-        api_key = settings.OPENROUTER_API_KEY
-        if api_key:
-            api_key = api_key.strip('"\'')
-            
-        if not api_key:
-            raise ValueError(
-                "CRITICAL CONFIGURATION ERROR: OPENROUTER_API_KEY is missing or empty! "
-                "Please set the OPENROUTER_API_KEY environment variable in your Railway 'Variables' tab."
-            )
-
-        self.llm = ChatOpenAI(
-            model="google/gemini-2.0-flash-001",
-            openai_api_key=api_key,
-            base_url="https://openrouter.ai/api/v1",
-            temperature=0,
-            max_tokens=500
-        )
+        from app.agent.core.llm import get_resilient_llm
+        self.llm = get_resilient_llm(temperature=0, max_tokens=500)
         
         self.prompt = ChatPromptTemplate.from_template("""
         You are a Pakistani Legal Intake Specialist.

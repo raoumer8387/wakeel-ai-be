@@ -29,6 +29,7 @@ class Settings(BaseSettings):
     GOOGLE_CLIENT_SECRET: str = ""
     
     # Legal Agent Settings
+    
     GEMINI_API_KEY: str = ""
     OPENROUTER_API_KEY: str = ""
     GROQ_API_KEY: str = ""  # Used for Whisper voice transcription (free at console.groq.com)

@@ -1,6 +1,6 @@
 import chromadb
 from chromadb.config import Settings
-from langchain_google_genai import GoogleGenerativeAIEmbeddings
+from app.agent.core.embeddings import get_resilient_embeddings
 from app.config import settings
 from typing import List
 import os
@@ -15,16 +15,7 @@ class LawVectorizer:
         print(f"DEBUG: Vectorizer using path: {settings.CHROMA_PERSIST_DIR}")
         self.client = chromadb.PersistentClient(path=settings.CHROMA_PERSIST_DIR)
         
-        # Using Gemini Cloud Embeddings
-        api_key = settings.GEMINI_API_KEY
-        if not api_key:
-            import os
-            api_key = os.getenv("GEMINI_API_KEY")
-
-        self.embeddings = GoogleGenerativeAIEmbeddings(
-            model="models/gemini-embedding-001",
-            google_api_key=api_key
-        )
+        self.embeddings = get_resilient_embeddings()
         
         # We no longer delete the collection here to allow for resuming ingestion
         self.collection = self.client.get_or_create_collection(

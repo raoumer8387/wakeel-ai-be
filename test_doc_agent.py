@@ -24,8 +24,9 @@ def run_test():
     
     result = agent.process(
         legal_brief=mock_legal_brief,
-        user_problem=user_problem,
-        case_id="CASE_KHULA_TEST"
+        chat_history=user_problem,
+        case_id="CASE_KHULA_TEST",
+        question_round=3
     )
     
     print("\n" + "=" * 60)

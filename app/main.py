@@ -1,4 +1,7 @@
 import os
+import sys
+import subprocess
+from contextlib import asynccontextmanager
 from fastapi import FastAPI, Depends
 from fastapi.middleware.cors import CORSMiddleware
 from fastapi.staticfiles import StaticFiles
@@ -13,10 +16,29 @@ from app.config import settings
 # Create static directory at startup if not exists
 os.makedirs("static/avatars", exist_ok=True)
 
+@asynccontextmanager
+async def lifespan(app: FastAPI):
+    # Run database migrations on startup
+    try:
+        print("Running database migrations on startup...")
+        result = subprocess.run(
+            [sys.executable, "-m", "alembic", "upgrade", "head"],
+            capture_output=True,
+            text=True,
+            check=True
+        )
+        print("Migration output:", result.stdout)
+    except Exception as e:
+        print("Failed to run migrations on startup:", str(e))
+        if hasattr(e, 'stderr') and e.stderr:
+            print("Migration stderr:", e.stderr)
+    yield
+
 app = FastAPI(
     title=settings.PROJECT_NAME,
     version=settings.VERSION,
-    openapi_url=f"{settings.API_V1_STR}/openapi.json"
+    openapi_url=f"{settings.API_V1_STR}/openapi.json",
+    lifespan=lifespan
 )
 
 # Mount static folder

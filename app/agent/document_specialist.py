@@ -26,26 +26,23 @@ def _header_footer(canvas, doc):
 
 class DocumentSpecialistAgent:
     def __init__(self):
-        self.llm = ChatOpenAI(
-            model="google/gemini-2.0-flash-001",
-            openai_api_key=settings.OPENROUTER_API_KEY,
-            base_url="https://openrouter.ai/api/v1",
-            temperature=0,
-            max_tokens=2000
-        )
+        from app.agent.core.llm import get_resilient_llm
+        self.llm = get_resilient_llm(temperature=0, max_tokens=2000)
 
     def select_template(self, issue_type: str) -> str:
         """Maps Agent 1 output issue_type to correct template file"""
         mapping = {
-            "khula": "data/templates/khula_petition.txt",
-            "talaq": "data/templates/talaq_notice.txt",
-            "maintenance": "data/templates/maintenance_petition.txt",
-            "custody": "data/templates/custody_petition.txt",
-            "dissolution": "data/templates/dissolution_petition.txt",
-            "dowry": "data/templates/dowry_petition.txt",
-            "parents_rights": "data/templates/parents_maintenance_petition.txt"
+            "khula": "khula_petition.txt",
+            "talaq": "talaq_notice.txt",
+            "maintenance": "maintenance_petition.txt",
+            "custody": "custody_petition.txt",
+            "dissolution": "dissolution_petition.txt",
+            "dowry": "dowry_petition.txt",
+            "parents_rights": "parents_maintenance_petition.txt"
         }
-        return mapping.get(issue_type.lower(), "data/templates/khula_petition.txt")
+        filename = mapping.get(issue_type.lower(), "khula_petition.txt")
+        base_dir = os.path.dirname(os.path.dirname(os.path.dirname(os.path.abspath(__file__))))
+        return os.path.join(base_dir, "data", "templates", filename)
 
     def extract_placeholders(self, legal_brief: dict, chat_history: str, required_keys: list) -> dict:
         """Call Gemini to extract values for placeholders from the chat history"""
@@ -130,8 +127,20 @@ Respond directly with the question.
         return filled_text, missing_fields
 
     def generate_pdf(self, filled_text: str, case_id: str, issue_type: str) -> str:
-        output_dir = "data/output"
-        os.makedirs(output_dir, exist_ok=True)
+        base_dir = os.path.dirname(os.path.dirname(os.path.dirname(os.path.abspath(__file__))))
+        output_dir = os.path.join(base_dir, "data", "output")
+        
+        try:
+            os.makedirs(output_dir, exist_ok=True)
+            test_file = os.path.join(output_dir, ".write_test")
+            with open(test_file, "w") as f:
+                f.write("test")
+            os.remove(test_file)
+        except Exception:
+            import tempfile
+            output_dir = os.path.join(tempfile.gettempdir(), "wakeel_output")
+            os.makedirs(output_dir, exist_ok=True)
+            
         pdf_path = os.path.join(output_dir, f"{case_id}_{issue_type}.pdf")
         
         doc = SimpleDocTemplate(

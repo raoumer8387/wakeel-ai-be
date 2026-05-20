@@ -1,23 +1,32 @@
 import chromadb
 from typing import List, Dict
 from app.config import settings
-from langchain_google_genai import GoogleGenerativeAIEmbeddings
+from app.agent.core.embeddings import get_resilient_embeddings
 
 class LawRetriever:
     def __init__(self):
-        self.client = chromadb.PersistentClient(path=settings.CHROMA_PERSIST_DIR)
-        self.collection = self.client.get_collection(name="pakistan_family_laws")
+        import os
+        import shutil
+        try:
+            self.client = chromadb.PersistentClient(path=settings.CHROMA_PERSIST_DIR)
+            self.collection = self.client.get_collection(name="pakistan_family_laws")
+        except Exception as e:
+            # If the database is corrupted or doesn't exist, try to recreate it
+            print(f"Error initializing ChromaDB: {e}. Recreating database directory...")
+            try:
+                if os.path.exists(settings.CHROMA_PERSIST_DIR):
+                    if os.path.isdir(settings.CHROMA_PERSIST_DIR):
+                        shutil.rmtree(settings.CHROMA_PERSIST_DIR)
+                    else:
+                        os.remove(settings.CHROMA_PERSIST_DIR)
+                os.makedirs(settings.CHROMA_PERSIST_DIR, exist_ok=True)
+                self.client = chromadb.PersistentClient(path=settings.CHROMA_PERSIST_DIR)
+                self.collection = self.client.get_or_create_collection(name="pakistan_family_laws")
+            except Exception as re_err:
+                print(f"Failed to auto-heal ChromaDB: {re_err}")
+                raise re_err
         
-        # Use the same embeddings as ingestion
-        api_key = settings.GEMINI_API_KEY
-        if not api_key:
-            import os
-            api_key = os.getenv("GEMINI_API_KEY")
-            
-        self.embeddings = GoogleGenerativeAIEmbeddings(
-            model="models/gemini-embedding-001",
-            google_api_key=api_key
-        )
+        self.embeddings = get_resilient_embeddings()
 
     def retrieve(self, query: str, families: List[str], k: int = 5) -> List[Dict]:
         # Generate embedding for the query

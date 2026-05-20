@@ -301,17 +301,12 @@ class WakeelOrchestrator:
             await db.commit()
 
     async def _check_draft_consent(self, user_input: str) -> bool:
-        from langchain_openai import ChatOpenAI
         from langchain_core.prompts import ChatPromptTemplate
         from langchain_core.output_parsers import JsonOutputParser
         from app.config import settings
 
-        llm = ChatOpenAI(
-            model="google/gemini-2.0-flash-001",
-            openai_api_key=settings.OPENROUTER_API_KEY,
-            base_url="https://openrouter.ai/api/v1",
-            temperature=0
-        )
+        from app.agent.core.llm import get_resilient_llm
+        llm = get_resilient_llm(temperature=0)
         prompt = ChatPromptTemplate.from_template("""
         The AI just asked the user if they want to prepare a draft legal document.
         User's reply: "{user_input}"

@@ -1,2 +1,16 @@
 .env
-*venv*  
+*venv*
+__pycache__/
+*.pyc
+*.pyo
+*.pyd
+.pytest_cache/
+.vscode/
+.idea/
+data/output/*
+!data/output/.gitkeep
+*.log
+wakeel-ai.db
+*.db-journal
+*.db-shm
+*.db-wal

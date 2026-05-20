@@ -9,9 +9,8 @@ async def test():
     print("Setting up test memory database...")
     engine = create_async_engine("sqlite+aiosqlite:///:memory:")
     
-    # We need to import User so the users table is created, though we won't insert a user.
-    # We'll just temporarily bypass foreign key checks or insert a dummy user.
     from app.models.user import User
+    import uuid
     
     async with engine.begin() as conn:
         await conn.run_sync(Base.metadata.create_all)
@@ -20,6 +19,7 @@ async def test():
     
     orchestrator = WakeelOrchestrator()
     case_id = "TEST_STATEFUL_001"
+    test_user_id = uuid.uuid4()
     
     # ── Turn 1 ──
     print("\n" + "=" * 50)
@@ -29,13 +29,24 @@ async def test():
     print(f"USER: {input_1}")
     
     async with async_session() as db:
-        case = Case(id=case_id, user_id="TEST_USER", status="draft")
+        # Create and insert dummy user to satisfy FK constraint
+        dummy_user = User(
+            id=test_user_id,
+            name="Sara Ahmed",
+            email="sara@example.com",
+            phone="03001234567",
+            cnic="35201-1111111-1"
+        )
+        db.add(dummy_user)
+        await db.flush()
+        
+        case = Case(id=case_id, user_id=test_user_id, status="draft")
         db.add(case)
         msg1 = Message(case_id=case_id, role="user", content=input_1)
         db.add(msg1)
         await db.commit()
         
-        async for event in orchestrator.run_pipeline(input_1, "TEST_USER", case_id, db):
+        async for event in orchestrator.run_pipeline(input_1, test_user_id, case_id, db):
             print(f"[{event['event'].upper()}] {event.get('message')}")
             if event['event'] == 'agent2_question':
                 print(f"\nAGENT ASKS:\n{event['message']}\n")
@@ -52,7 +63,7 @@ async def test():
         db.add(msg2)
         await db.commit()
         
-        async for event in orchestrator.run_pipeline(input_2, "TEST_USER", case_id, db):
+        async for event in orchestrator.run_pipeline(input_2, test_user_id, case_id, db):
             print(f"[{event['event'].upper()}] {event.get('message')}")
             if event['event'] == 'agent2_question':
                 print(f"\nAGENT ASKS:\n{event['message']}\n")
@@ -69,7 +80,7 @@ async def test():
         db.add(msg3)
         await db.commit()
         
-        async for event in orchestrator.run_pipeline(input_3, "TEST_USER", case_id, db):
+        async for event in orchestrator.run_pipeline(input_3, test_user_id, case_id, db):
             print(f"[{event['event'].upper()}] {event.get('message')}")
             
     print("\nStateful Chat Test Complete!")
