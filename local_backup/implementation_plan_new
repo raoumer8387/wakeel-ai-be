@@ -1,0 +1,34 @@
+# State-Based Conversational Flow Implementation Plan
+
+This plan updates the `WakeelOrchestrator` to split the pipeline into two distinct conversational phases. Instead of instantly jumping from legal analysis to document drafting, the bot will pause and ask the user if they actually want a document drafted. 
+
+## Proposed Changes
+
+### 1. New State Machine
+We will update the `Case.status` flow in `app/agent/orchestrator.py`:
+- `draft`: New case. Agent 1 analyzes the problem and provides the legal brief.
+- `awaiting_draft_consent`: Agent 1 has provided advice. The bot asks the user "Would you like me to prepare a draft?". The pipeline pauses here.
+- `drafting`: The user consented. Agent 2 asks for missing information and generates the PDF.
+- `filed`: The document is complete.
+
+### 2. Orchestrator Logic (`app/agent/orchestrator.py`)
+- **Phase 1 (Drafting -> Awaiting Consent)**:
+  - Run Agent 1 (Legal Analyst) normally.
+  - After yielding `agent1_done`, emit a new SSE event `agent1_question` with the message: *"Based on my analysis, I can help you draft a [Document Type]. Would you like me to prepare a draft for you?"*
+  - Save this question to the `messages` table and update the case status to `awaiting_draft_consent`.
+  - Pause the pipeline.
+
+- **Phase 2 (Awaiting Consent Evaluation)**:
+  - When the user responds, check if they are giving consent (e.g., "Yes please", "Sure") or asking a follow-up question (e.g., "What will it cost?", "No").
+  - We will implement a small `_check_user_intent` method using Gemini to evaluate the user's message.
+  - **If Consent = Yes**: Update status to `drafting`, and immediately trigger Agent 2 to start asking for missing information.
+  - **If Consent = No / Follow-up**: Provide a conversational answer using Agent 1 and remain in `awaiting_draft_consent`.
+
+### 3. Database
+- No schema changes are required. The `status` column in the `cases` table is just a string, so we can seamlessly transition to using `"awaiting_draft_consent"` and `"drafting"`.
+
+## User Review Required
+> [!IMPORTANT]
+> The orchestrator will emit a new event type called `agent1_question` (very similar to `agent2_question`). Your React Native frontend should be ready to render `agent1_question` as a chat message bubble from the bot so the user can reply to it. 
+> 
+> Does this flow align with your vision? Let me know and I will begin the backend implementation!
