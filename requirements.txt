@@ -21,3 +21,4 @@ langchain-text-splitters
 chromadb
 unstructured[pdf]
 pytesseract
+reportlab
