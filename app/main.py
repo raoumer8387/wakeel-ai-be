@@ -5,6 +5,7 @@ from fastapi.staticfiles import StaticFiles
 from app.api.v1.auth import router as auth_router
 from app.api.v1.endpoints.legal import router as legal_router
 from app.api.v1 import chat, cases, documents
+from app.api.v1.voice import router as voice_router
 from app.api.v1.deps import get_current_user
 from app.models.user import User
 from app.config import settings
@@ -48,6 +49,11 @@ app.include_router(
     documents.router,
     prefix="/api/v1/documents",
     tags=["documents"]
+)
+app.include_router(
+    voice_router,
+    prefix="/api/v1/voice",
+    tags=["voice"]
 )
 
 @app.get("/")

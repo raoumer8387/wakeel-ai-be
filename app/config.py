@@ -31,6 +31,8 @@ class Settings(BaseSettings):
     # Legal Agent Settings
     GEMINI_API_KEY: str = ""
     OPENROUTER_API_KEY: str = ""
+    GROQ_API_KEY: str = ""  # Used for Whisper voice transcription (free at console.groq.com)
+    HF_API_TOKEN: str = ""  # HuggingFace token for Whisper (free at huggingface.co/settings/tokens)
     DATA_PATH: str = "D:\\wakeel-ai-be\\Wakeel-AI-data"
     CHROMA_PERSIST_DIR: str = os.path.join(BASE_DIR, "chroma_db")
 
