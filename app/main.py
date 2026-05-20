@@ -1,5 +1,7 @@
+import os
 from fastapi import FastAPI, Depends
 from fastapi.middleware.cors import CORSMiddleware
+from fastapi.staticfiles import StaticFiles
 from app.api.v1.auth import router as auth_router
 from app.api.v1.endpoints.legal import router as legal_router
 from app.api.v1 import chat, cases, documents
@@ -7,11 +9,17 @@ from app.api.v1.deps import get_current_user
 from app.models.user import User
 from app.config import settings
 
+# Create static directory at startup if not exists
+os.makedirs("static/avatars", exist_ok=True)
+
 app = FastAPI(
     title=settings.PROJECT_NAME,
     version=settings.VERSION,
     openapi_url=f"{settings.API_V1_STR}/openapi.json"
 )
+
+# Mount static folder
+app.mount("/static", StaticFiles(directory="static"), name="static")
 
 # CORS Setup
 app.add_middleware(

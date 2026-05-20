@@ -1,6 +1,6 @@
 from datetime import datetime, timedelta
 from typing import Optional
-from fastapi import APIRouter, Depends, HTTPException, status
+from fastapi import APIRouter, Depends, HTTPException, status, UploadFile, File
 from sqlalchemy.ext.asyncio import AsyncSession
 from sqlalchemy.future import select
 from jose import jwt, JWTError
@@ -79,10 +79,14 @@ async def google_auth(
         user.name = name
         user.avatar_url = avatar_url
     else:
+        # Generate temporary unique phone and cnic values for Google users to satisfy constraints
+        temp_id = google_id[-10:] if len(google_id) >= 10 else google_id
         user = User(
             google_id=google_id,
             email=email,
             name=name,
+            phone=f"G-PH-{temp_id}",
+            cnic=f"G-CN-{temp_id}",
             avatar_url=avatar_url,
         )
         db.add(user)
@@ -275,6 +279,51 @@ async def update_profile(
     if request.avatar_url is not None:
         current_user.avatar_url = request.avatar_url.strip() if request.avatar_url else None
 
+    if request.address is not None:
+        current_user.address = request.address.strip() if request.address else None
+
+    current_user.updated_at = datetime.utcnow()
+
+    await db.commit()
+    await db.refresh(current_user)
+
+    return current_user
+
+
+# ──────────────────────────────────────────────
+#  POST /api/v1/auth/upload-avatar
+# ──────────────────────────────────────────────
+@router.post("/upload-avatar", response_model=UserResponse)
+async def upload_avatar(
+    file: UploadFile = File(...),
+    current_user: User = Depends(get_current_user),
+    db: AsyncSession = Depends(get_db),
+):
+    """Upload a custom profile picture."""
+    import os
+    import shutil
+
+    # Validate file type
+    if not file.content_type.startswith("image/"):
+        raise HTTPException(
+            status_code=status.HTTP_400_BAD_REQUEST,
+            detail="File must be an image",
+        )
+
+    # Ensure static folder exists
+    os.makedirs("static/avatars", exist_ok=True)
+
+    # Save format
+    ext = file.filename.split(".")[-1] if "." in file.filename else "jpg"
+    filename = f"{current_user.id}.{ext}"
+    filepath = os.path.join("static/avatars", filename)
+
+    # Write file
+    with open(filepath, "wb") as buffer:
+        shutil.copyfileobj(file.file, buffer)
+
+    # Update database
+    current_user.avatar_url = f"/static/avatars/{filename}"
     current_user.updated_at = datetime.utcnow()
 
     await db.commit()

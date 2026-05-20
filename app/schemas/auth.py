@@ -13,8 +13,8 @@ class GoogleLoginRequest(BaseModel):
 class ManualRegisterRequest(BaseModel):
     name: str
     email: EmailStr
-    phone: Optional[str] = None
-    cnic: Optional[str] = None
+    phone: str
+    cnic: str
     password: str
 
 
@@ -32,6 +32,7 @@ class ProfileUpdateRequest(BaseModel):
     phone: Optional[str] = None
     cnic: Optional[str] = None
     avatar_url: Optional[str] = None
+    address: Optional[str] = None
 
 
 # ── Response Schemas ──
@@ -43,6 +44,7 @@ class UserResponse(BaseModel):
     phone: Optional[str] = None
     cnic: Optional[str] = None
     avatar_url: Optional[str] = None
+    address: Optional[str] = None
     is_active: bool
     created_at: datetime
     updated_at: datetime
