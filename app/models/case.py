@@ -1,4 +1,4 @@
-from sqlalchemy import Column, String, DateTime, JSON, ForeignKey
+from sqlalchemy import Column, String, DateTime, JSON, ForeignKey, Uuid
 from sqlalchemy.orm import relationship
 from uuid import uuid4
 import datetime
@@ -9,7 +9,7 @@ class Case(Base):
 
     id = Column(String, primary_key=True,
                 default=lambda: str(uuid4()))
-    user_id = Column(String, ForeignKey("users.id"),
+    user_id = Column(Uuid, ForeignKey("users.id"),
                      nullable=False)
     title = Column(String, nullable=True)
     issue_type = Column(String, nullable=True)
