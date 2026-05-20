@@ -26,13 +26,14 @@ class User(Base):
     # ── Profile fields ──
     name: Mapped[str] = mapped_column(String(255))
     email: Mapped[str] = mapped_column(String(255), unique=True, index=True)
-    phone: Mapped[Optional[str]] = mapped_column(
-        String(20), unique=True, index=True, nullable=True
+    phone: Mapped[str] = mapped_column(
+        String(20), unique=True, index=True, nullable=False
     )
-    cnic: Mapped[Optional[str]] = mapped_column(
-        String(20), unique=True, index=True, nullable=True
+    cnic: Mapped[str] = mapped_column(
+        String(20), unique=True, index=True, nullable=False
     )
     avatar_url: Mapped[Optional[str]] = mapped_column(Text, nullable=True)
+    address: Mapped[Optional[str]] = mapped_column(Text, nullable=True)
 
     # ── Meta fields ──
     is_active: Mapped[bool] = mapped_column(Boolean, default=True)
