@@ -1,3 +1,12 @@
+---
+title: Wakeel AI Backend
+emoji: ⚖️
+colorFrom: blue
+colorTo: indigo
+sdk: docker
+pinned: false
+---
+
 # Wakeel AI - Backend 🚀
 
 This is the FastAPI backend for the Wakeel AI mobile application. It provides a robust, asynchronous API with comprehensive authentication and a modular project structure.
